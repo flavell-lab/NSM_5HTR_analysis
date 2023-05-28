@@ -1,4 +1,4 @@
-# using BehaviorDataNIR, CaAnalysis
+using BehaviorDataNIR, CaAnalysis
 using JLD2, PyCall, PyPlot, FlavellBase, StatsBase, ProgressMeter, Statistics, HDF5, Impute, Plots, CaAnalysis
 using DSP, TotalVariation, MultipleTesting, Distributions, Colors, ColorSchemes, MultivariateStats, LinearAlgebra, InformationMeasures, Random
 
@@ -73,18 +73,6 @@ end
 function plot_behaviors(data_uid, time_encounter, velocity, speed, rev_start_end, pumping, head_curvature, head_curv_deriv; times=times, time_exc=66)
     fig, (ax2, ax4, ax3) = plt.subplots(3, figsize=(8,3))
 
-    # ax1[:set_xlim](times[1], times[end])
-    # ax1[:set_ylim](-0.12, 0.12)
-    # ax1.plot(times, velocity[times], c="red")
-    # ax1.axvline(time_encounter, c="grey")
-    # ax1.axvline(time_encounter+635, c="green")
-    # ax1.set_title(data_uid)
-    # ax1.set_ylabel("velocity\n(mm/s)", fontsize=11)
-    # ax1.xaxis.set_ticks([])
-    # ax1.spines["right"].set_visible([])
-    # ax1.spines["top"].set_visible([])
-    # ax1.spines["bottom"].set_visible([])
-
     ax2[:set_xlim](times[1], times[end])
     ax2[:set_ylim](-0.005, 0.105)
     ax2.plot(times, speed[times], c="black")
@@ -100,37 +88,25 @@ function plot_behaviors(data_uid, time_encounter, velocity, speed, rev_start_end
     ax2.spines["right"].set_visible([])
     ax2.spines["top"].set_visible([])
     ax2.spines["bottom"].set_visible([])
-
-    ax3[:set_xlim](times[1], times[end])
-    ax3[:set_ylim](0,20)
-    ax3.plot(times, pumping[times].*4, c="black")
-    ax3.axvline(time_encounter, c="black", linestyle="dotted")
-    # ax3.axvline(time_encounter+635, c="green")
-    ax3.set_ylabel("pumping\nrate (Hz)", fontsize=11)
-    ax3.xaxis.set_ticks([])
-    ax3.spines["right"].set_visible([])
-    ax3.spines["top"].set_visible([])
-
+    
     ax4[:set_xlim](times[1], times[end])
     ax4[:set_ylim](-1.05, 1.05)
     ax4.plot(times, head_curvature[times], c="black")
     ax4.axvline(time_encounter, c="black", linestyle="dotted")
-    # ax4.axvline(time_encounter+635, c="green")
     ax4.set_ylabel("head\ncurvature\n(rad)", fontsize=11)
     ax4.xaxis.set_ticks([])
     ax4.spines["right"].set_visible([])
     ax4.spines["top"].set_visible([])
     ax4.spines["bottom"].set_visible([])
 
-    # ax5[:set_xlim](times[1], times[end])
-    # ax5[:set_ylim](-1.2, 1.2)
-    # ax5.plot(times[1]:times[end-1], head_curv_deriv[times[1]:times[end-1]], c="magenta")
-    # ax5.axvline(time_encounter, c="grey")
-    # ax5.axvline(time_encounter+635, c="green")
-    # ax5.set_ylabel("head\ncurvature\nderivative\n(rad/s)", fontsize=11)
-    # ax5.xaxis.set_ticks([])
-    # ax5.spines["right"].set_visible([])
-    # ax5.spines["top"].set_visible([])
+    ax3[:set_xlim](times[1], times[end])
+    ax3[:set_ylim](0,20)
+    ax3.plot(times, pumping[times].*4, c="black")
+    ax3.axvline(time_encounter, c="black", linestyle="dotted")
+    ax3.set_ylabel("pumping\nrate (Hz)", fontsize=11)
+    ax3.xaxis.set_ticks([])
+    ax3.spines["right"].set_visible([])
+    ax3.spines["top"].set_visible([])
     ax3.set_xlabel("time (min)", fontsize=11)
     ax3.xaxis.set_ticks([times[1], mean(times), times[end]])
     ax3.xaxis.set_ticklabels(["$(Int.(round((times[1]-1)/100)))", "$(Int.(round(mean(times)/100)))", "$(Int.(round(times[end]/100)))"])
@@ -167,7 +143,7 @@ function unitRange_trace(trace)
     dt = fit(UnitRangeTransform, trace)
     normalizedTrace = StatsBase.transform(dt, trace)
     
-    normalizedTrace
+    return normalizedTrace
 end
 
 
@@ -237,6 +213,7 @@ function measure_snr(traces_array, post_encounter_times, noise_thresh)
 end
 
 
+
 # inputs:
 # data_uid: a string
 # nsm: a vector of nsm activity
@@ -255,6 +232,7 @@ function plot_nsm(data_uid, nsm, time_encounter; times=times, color=:black, size
 end
 
 
+
 # inputs:
 # nsm and beh: vectors of the same length
 # y_label: a string
@@ -268,6 +246,7 @@ function scatter_beh(nsm, beh, y_label; times = times)
 end
 
 
+
 # inputs:
 # x and y are 2 vectors of the same length
 # output:
@@ -278,6 +257,7 @@ function get_cosine_similarity(x,y)
     
     cossim
 end
+
 
 
 # inputs:
@@ -309,6 +289,14 @@ function nsm_autocor(nsm, times; acor_thresh=0.2)
     shift_range, acor
 end
 
+
+
+# inputs:
+# nsm: a vector of smoothed neural trace of NSM, or average of 2 traces of a pair of NSM
+# times: a series that indicate post-encounter timepoints
+# outputs:
+# a plot
+
 function plot_nsm_autocor(nsm, times)
     shift_range, acor = nsm_autocor(nsm, times)
     Plots.bar(acor, ylims=(-1,1), xlims=(0, length(times)), guidefontsize=14, tickfontsize=14, fontsize=14,
@@ -318,13 +306,15 @@ function plot_nsm_autocor(nsm, times)
 end
 
 
+
 function make_kernel(a,b,c,d,e)
     rise_phase = a:b:c
     decay_phase = c:-d:e
     kernel = vcat(rise_phase, decay_phase[2:end])
     
-    kernel, length(rise_phase), length(decay_phase)
+    return kernel, length(rise_phase), length(decay_phase)
 end
+
 
 
 function make_differentiator_kernel(a,b,c)
@@ -336,8 +326,9 @@ function make_differentiator_kernel(a,b,c)
     # kernel[1:len1-1] .= a
     # kernel[len1+1:length(k)] .= c
     
-    k, len1, len2
+    return k, len1, len2
 end
+
 
 
 function plot_kernel(kernel, len1, len2)
@@ -348,12 +339,14 @@ function plot_kernel(kernel, len1, len2)
 end
 
 
+
 function unitRange_trace(trace)
     dt = fit(UnitRangeTransform, trace)
     normalizedTrace = StatsBase.transform(dt, trace)
     
-    normalizedTrace
+    return normalizedTrace
 end
+
 
 
 function conv_nsm(nsm, post_encounter_times, kernel, len1, len2)
@@ -367,8 +360,9 @@ function conv_nsm(nsm, post_encounter_times, kernel, len1, len2)
         k = k+1
     end
     
-    nsm_convolved, start_t, stop_t
+    return nsm_convolved, start_t, stop_t
 end
+
 
 
 function test_nsm_kernels_differentiator(nsm, fit_target, post_encounter_times, piezo_rate)
@@ -395,8 +389,10 @@ function test_nsm_kernels_differentiator(nsm, fit_target, post_encounter_times, 
             metric[:,i] = [s,0,gof]
         end
     end
-    metric
+    
+    return metric
 end
+
 
 
 function test_nsm_kernels_centered(nsm, fit_target, post_encounter_times, piezo_rate)
@@ -441,8 +437,10 @@ function test_nsm_kernels_centered(nsm, fit_target, post_encounter_times, piezo_
             end
         end        
     end
-    metric
+    
+    return metric
 end
+
 
 
 function test_ash_kernels_centered(ash, fit_target, post_encounter_times, piezo_rate)
@@ -467,23 +465,24 @@ function test_ash_kernels_centered(ash, fit_target, post_encounter_times, piezo_
             end
         end       
     end
-    metric
+    
+    return metric
 end
 
 
+
 function find_winner_param(metric)
-    
     max_gof = maximum(abs.(metric[end, :]))
     winner_idx = findall(x->abs.(x)==max_gof, metric[end,:]) # if I ever want to select the top 1% of kernels, change this line 
     winner_param = metric[1:end-1, winner_idx]
     best_gof = metric[end, winner_idx]
 
-    winner_param, best_gof
+    return winner_param, best_gof
 end
 
 
+
 function swap_test_nsm_kernels_centered(nsm, smooth_traces_array, noisy_idx, post_encounter_times, NSM_like_garbage_library; fdr=0.1, tail=2, piezo_rate=1.65)
-    
     # segment NSM_like_garbage of the same length as nsm
     NSM_like_garbage_borrowed = zeros(length(NSM_like_garbage_library), post_encounter_times[end])
     j = 1
@@ -548,12 +547,12 @@ function swap_test_nsm_kernels_centered(nsm, smooth_traces_array, noisy_idx, pos
     sig_idx = findall(x->x.<fdr, p_val_corr) ######## need more work
     sig_neuron_idx = winner_param_all_neurons[end,sig_idx]
 
-    winner_param_all_neurons, p_val_uncorr, p_val_corr, sig_neuron_idx, gof_distribution
+    return winner_param_all_neurons, p_val_uncorr, p_val_corr, sig_neuron_idx, gof_distribution
 end
 
 
+
 function swap_test_nsm_kernels_differentiator(nsm, smooth_traces_array, noisy_idx, post_encounter_times, NSM_like_garbage_library; fdr=0.1, tail=2, piezo_rate=1.65)
-    
     # segment NSM_like_garbage of the same length as nsm
     NSM_like_garbage_borrowed = zeros(length(NSM_like_garbage_library), post_encounter_times[end])
     j = 1
@@ -618,7 +617,7 @@ function swap_test_nsm_kernels_differentiator(nsm, smooth_traces_array, noisy_id
     sig_idx = findall(x->x.<fdr, p_val_corr) ######## need more work
     sig_neuron_idx = winner_param_all_neurons[end,sig_idx]
 
-    winner_param_all_neurons, p_val_uncorr, p_val_corr, sig_neuron_idx, gof_distribution
+    return winner_param_all_neurons, p_val_uncorr, p_val_corr, sig_neuron_idx, gof_distribution
 end
 
 
@@ -639,86 +638,85 @@ end
 # p: probability that a two-tailed relationship between nsm and beh is significant
 # orig: the correlational measure between nsm and beh
 
-# function shift_test_nsm(nsm, beh, times, shift_range, method; plot=false, tail=2, threshs=[2.5, 97.5], samples=5000, y_label=[])   
-#     shifts = Int.(round.(rand(Uniform(shift_range[1],shift_range[end]), samples), digits=0)) # sample from shift_range
-#     shifted = []
-#     # first_t = times[1]
-#     # last_t = times[end]
+function shift_test_nsm(nsm, beh, times, shift_range, method; plot=false, tail=2, threshs=[2.5, 97.5], samples=5000, y_label=[])   
+    shifts = Int.(round.(rand(Uniform(shift_range[1],shift_range[end]), samples), digits=0)) # sample from shift_range
+    shifted = []
+    # first_t = times[1]
+    # last_t = times[end]
     
-#     if method=="pearson correlation"
-#         orig = cor(nsm[times], beh[times])
-#         for i = shifts
-#             nsm_warp = circshift(nsm[times], i)
-#             temp = cor(nsm_warp, beh[times])
-#             push!(shifted, temp)
-#         end
+    if method=="pearson correlation"
+        orig = cor(nsm[times], beh[times])
+        for i = shifts
+            nsm_warp = circshift(nsm[times], i)
+            temp = cor(nsm_warp, beh[times])
+            push!(shifted, temp)
+        end
         
-#     elseif method=="spearman correlation"
-#         orig = corspearman(nsm[times], beh[times])
-#         for i = shifts
-#             nsm_warp = circshift(nsm[times], i)
-#             temp = corspearman(nsm_warp, beh[times])
-#             push!(shifted, temp)
-#         end
+    elseif method=="spearman correlation"
+        orig = corspearman(nsm[times], beh[times])
+        for i = shifts
+            nsm_warp = circshift(nsm[times], i)
+            temp = corspearman(nsm_warp, beh[times])
+            push!(shifted, temp)
+        end
         
-#     elseif method=="mutual information"
-#         orig = get_mutual_information(nsm[times], beh[times])/get_entropy(nsm[times], beh[times])
-#         for i = Int64.(shifts)
-#             nsm_warp = vcat(nsm[first_t+i:last_t], nsm[first_t:first_t+i-1])
-#             temp = get_mutual_information(nsm_warp, beh[times])/get_entropy(nsm_warp, beh[times])
-#             push!(back_shifted, temp)
-#         end
-#         for i = Int64.(shifts)
-#             nsm_warp = vcat(nsm[last_t-i+1:last_t], nsm[first_t:last_t-i])
-#             temp = get_mutual_information(nsm_warp, beh[times])/get_entropy(nsm_warp, beh[times])
-#             push!(fwd_shifted, temp)
-#         end
+    elseif method=="mutual information"
+        orig = get_mutual_information(nsm[times], beh[times])/get_entropy(nsm[times], beh[times])
+        for i = Int64.(shifts)
+            nsm_warp = vcat(nsm[first_t+i:last_t], nsm[first_t:first_t+i-1])
+            temp = get_mutual_information(nsm_warp, beh[times])/get_entropy(nsm_warp, beh[times])
+            push!(back_shifted, temp)
+        end
+        for i = Int64.(shifts)
+            nsm_warp = vcat(nsm[last_t-i+1:last_t], nsm[first_t:last_t-i])
+            temp = get_mutual_information(nsm_warp, beh[times])/get_entropy(nsm_warp, beh[times])
+            push!(fwd_shifted, temp)
+        end
         
-#     elseif method=="cosine similarity"
-#         orig = get_cosine_similarity(nsm[times], beh[times])
-#         for i = Int64.(shifts)
-#             nsm_warp = vcat(nsm[first_t+i:last_t], nsm[first_t:first_t+i-1])
-#             temp = get_cosine_similarity(nsm_warp, beh[times])
-#             push!(back_shifted, temp)
-#         end
-#         for i = Int64.(shifts)
-#             nsm_warp = vcat(nsm[last_t-i+1:last_t], nsm[first_t:last_t-i])
-#             temp = get_cosine_similarity(nsm_warp, beh[times])
-#             push!(fwd_shifted, temp)
-#         end
-#     end
+    elseif method=="cosine similarity"
+        orig = get_cosine_similarity(nsm[times], beh[times])
+        for i = Int64.(shifts)
+            nsm_warp = vcat(nsm[first_t+i:last_t], nsm[first_t:first_t+i-1])
+            temp = get_cosine_similarity(nsm_warp, beh[times])
+            push!(back_shifted, temp)
+        end
+        for i = Int64.(shifts)
+            nsm_warp = vcat(nsm[last_t-i+1:last_t], nsm[first_t:last_t-i])
+            temp = get_cosine_similarity(nsm_warp, beh[times])
+            push!(fwd_shifted, temp)
+        end
+    end
     
-#     #shifted = vcat(back_shifted, fwd_shifted)
-#     vect = push!(shifted, orig)
-#     s = sortperm(vect)
-#     tsamples = samples+1
-#     rank = minimum(findall(x->x==vect[tsamples], vect[s]))
-#     thresh_1 = StatsBase.percentile(shifted, threshs[1])
-#     thresh_2 = StatsBase.percentile(shifted, threshs[2])
+    vect = push!(shifted, orig)
+    s = sortperm(vect)
+    tsamples = samples+1
+    rank = minimum(findall(x->x==vect[tsamples], vect[s]))
+    thresh_1 = StatsBase.percentile(shifted, threshs[1])
+    thresh_2 = StatsBase.percentile(shifted, threshs[2])
     
-#     if orig > 0
-#         p = (tsamples-rank)/tsamples # compute p-val from rank (rank 1 has the smallest value), if 1% of samples are ranked higher than orig, then p=0.01
-#     elseif orig < 0 && tail == 2
-#         p = (rank-1)/tsamples # if rank is very close to 1, the correlational measure is very negative and p is very small
-#     else
-#         p = 1 # orig is 0, there is no relationship whatsoever
-#     end
+    if orig > 0
+        p = (tsamples-rank)/tsamples # compute p-val from rank (rank 1 has the smallest value), if 1% of samples are ranked higher than orig, then p=0.01
+    elseif orig < 0 && tail == 2
+        p = (rank-1)/tsamples # if rank is very close to 1, the correlational measure is very negative and p is very small
+    else
+        p = 1 # orig is 0, there is no relationship whatsoever
+    end
     
-#     if plot
-#         figure(figsize=(2,5))
-#         plt.plot([0.8, 1.2], [orig, orig], color="red", linewidth=3)
-#         for i = shifted
-#             plt.plot([1.6, 2.0], [i,i], color="black", alpha=0.01, linewidth=1)
-#         end
+    if plot
+        figure(figsize=(2,5))
+        plt.plot([0.8, 1.2], [orig, orig], color="red", linewidth=3)
+        for i = shifted
+            plt.plot([1.6, 2.0], [i,i], color="black", alpha=0.01, linewidth=1)
+        end
 
-#         plt.xticks([1,1.8], ["NSM", "shifted NSM"], rotation=90, fontsize=14)
-#         plt.axhspan(thresh_1, thresh_2, color=:lightblue)
-#         ylabel("$method $y_label", fontsize=14)
-#         title("p = $(round(p; digits=3))", fontsize=14)
-#     end
+        plt.xticks([1,1.8], ["NSM", "shifted NSM"], rotation=90, fontsize=14)
+        plt.axhspan(thresh_1, thresh_2, color=:lightblue)
+        ylabel("$method $y_label", fontsize=14)
+        title("p = $(round(p; digits=3))", fontsize=14)
+    end
     
-#     p, orig
-# end
+    return p, orig
+end
 
 
 
@@ -799,6 +797,7 @@ function swap_test_nsm(nsm, beh, times, NSM_like_garbage_library, method; plot_=
 end
 
 
+
 # inputs:
 # same as inputs of shift_test_nsm(), except that beh can be an array instead of a vector
 # fdr (optional kwarg): false detection rate, default 0.05
@@ -808,22 +807,22 @@ end
 # sig_neuron_idx: a vector of idx of neurons that pass the shifting test; smooth_traces_array[sig_neuron_idx,:] returns the neural traces of all nsm-modulated neurons
 # orig_all: a vector of correlational measure with nsm over timepoints of interest
 
-# function find_sig_neurons(nsm, smooth_traces_array, times, shift_range, method, tail, threshs; fdr=0.05)
-#     num_neurons = size(smooth_traces_array,1)
-#     p_val_uncorr = ones(num_neurons)
-#     orig_all = ones(num_neurons)
+function find_sig_neurons(nsm, smooth_traces_array, times, shift_range, method, tail, threshs; fdr=0.05)
+    num_neurons = size(smooth_traces_array,1)
+    p_val_uncorr = ones(num_neurons)
+    orig_all = ones(num_neurons)
 
-#     for n = 1:num_neurons
-#         p, orig = shift_test_nsm(nsm, smooth_traces_array[n,:], times, shift_range, method; plot=false, tail=tail, threshs=threshs, samples=5000)
-#         p_val_uncorr[n] = p
-#         orig_all[n] = orig
-#     end 
+    for n = 1:num_neurons
+        p, orig = shift_test_nsm(nsm, smooth_traces_array[n,:], times, shift_range, method; plot=false, tail=tail, threshs=threshs, samples=5000)
+        p_val_uncorr[n] = p
+        orig_all[n] = orig
+    end 
 
-#     p_val_corr = MultipleTesting.adjust(p_val_uncorr, BenjaminiHochberg())
-#     sig_neuron_idx = findall(x->x.<=fdr, p_val_corr)
+    p_val_corr = MultipleTesting.adjust(p_val_uncorr, BenjaminiHochberg())
+    sig_neuron_idx = findall(x->x.<=fdr, p_val_corr)
     
-#     p_val_uncorr, p_val_corr, sig_neuron_idx, orig_all
-# end
+    p_val_uncorr, p_val_corr, sig_neuron_idx, orig_all
+end
 
 
 
@@ -1001,7 +1000,7 @@ function neural_pca(nsm, smooth_traces_array; times=times, plot_var_exp=false, p
         end
     end
     
-    PC, var_exp, loading
+    return PC, var_exp, loading
 end
 
 
@@ -1015,7 +1014,7 @@ function zscore_trace(trace)
     dt = fit(ZScoreTransform, trace)
     zscoredtrace = StatsBase.transform(dt, trace)
     
-    zscoredtrace
+    return zscoredtrace
 end
 
 
@@ -1034,55 +1033,55 @@ end
 # metric: an array with 5 rows, the first 4 rows indicating the rise rate, decay rate, time window and sign of the kernel, 
 # and the last row recording the goodness of it measure with fit_target; number of columns represents the number of observations
 
-# function test_nsm_kernels(zscored_nsm, fit_target, kernel_range; max_rise=1, max_fall=1, max_time_window=25, plot_kernels=false, plot_convolved_nsms=false)
-#     metric = [0,0,0,0,0]
-#     Ts = 1:max_time_window
+function test_nsm_kernels(zscored_nsm, fit_target, kernel_range; max_rise=1, max_fall=1, max_time_window=25, plot_kernels=false, plot_convolved_nsms=false)
+    metric = [0,0,0,0,0]
+    Ts = 1:max_time_window
 
-#     for r = 0.1:0.1:max_rise
-#         for f = 0.1:0.1:max_fall
-#             for i = Ts
-#                 for s = [-1,1]
-#                     trend = [] # the ups and downs of a kernel
-#                     for t = 1:i
-#                         trend = vcat(trend, r*t)
-#                     end
-#                     peak = trend[end]
-#                     for t = 1:i
-#                         trend = vcat(trend, peak-f*t)
-#                     end
-#                     trend = trend .* s
+    for r = 0.1:0.1:max_rise
+        for f = 0.1:0.1:max_fall
+            for i = Ts
+                for s = [-1,1]
+                    trend = [] # the ups and downs of a kernel
+                    for t = 1:i
+                        trend = vcat(trend, r*t)
+                    end
+                    peak = trend[end]
+                    for t = 1:i
+                        trend = vcat(trend, peak-f*t)
+                    end
+                    trend = trend .* s
 
-#                     if plot_kernels
-#                         plt.plot(trend, foreground_color_border=:lightgrey)
-#                         title("kernels")
-#                     end
+                    if plot_kernels
+                        plt.plot(trend, foreground_color_border=:lightgrey)
+                        title("kernels")
+                    end
 
-#                     convolved_nsm = conv(Float64.(trend), zscored_nsm[kernel_range[1]-i:kernel_range[end]]) 
-#                     convolved_nsm = zscore_trace(convolved_nsm)
+                    convolved_nsm = conv(Float64.(trend), zscored_nsm[kernel_range[1]-i:kernel_range[end]]) 
+                    convolved_nsm = zscore_trace(convolved_nsm)
 
-#                     if plot_convolved_nsms
-#                         plt.plot(convolved_nsm)
-#                         title("kernel-convolved NSMs", foreground_color_border=:lightgrey)
-#                     end
+                    if plot_convolved_nsms
+                        plt.plot(convolved_nsm)
+                        title("kernel-convolved NSMs", foreground_color_border=:lightgrey)
+                    end
 
-#                     x = convolved_nsm[i+1:(length(convolved_nsm)-2*i+1)]
-#                     y = fit_target
+                    x = convolved_nsm[i+1:(length(convolved_nsm)-2*i+1)]
+                    y = fit_target
 
-#                     if length(x)==length(y)
-#                         gof = get_cosine_similarity(x,y)
-#                         vec = [r,f,i,s,gof]
-#                         metric = hcat(metric, vec)
-#                     else
-#                         print("convolved_nsm and fit_target are not of the same length!")
-#                     end
-#                 end
-#             end
-#         end
-#     end
+                    if length(x)==length(y)
+                        gof = get_cosine_similarity(x,y)
+                        vec = [r,f,i,s,gof]
+                        metric = hcat(metric, vec)
+                    else
+                        print("convolved_nsm and fit_target are not of the same length!")
+                    end
+                end
+            end
+        end
+    end
     
-#     metric = metric[:, 2:end]
-#     metric
-# end
+    metric = metric[:, 2:end]
+    return metric
+end
     
     
     
@@ -1093,19 +1092,19 @@ end
 # a scatter plot: redder means better fit
 # winner_param: 4-element kernel parameters that fits the fit_target best
 
-# function find_winner_kernel(metric; plot=false)
-#     if plot
-#         cs = ColorScheme([colorant"blue", colorant"red"]);
-#         colors = get.(Ref(cs), metric[5,:])./ maximum(metric[5,:])
-#         Plots.scatter(metric[3,:], metric[1,:]./metric[2,:], metric[4,:], label=nothing, markersize=3, markerstrokewidth=0, fontsize=14,
-#             color=colors, xlabel="time window", ylabel="rise:decay ratio", zlabel="sign", title="kernel fit", foreground_color_border=:lightgrey)
-#     end
+function find_winner_kernel(metric; plot=false)
+    if plot
+        cs = ColorScheme([colorant"blue", colorant"red"]);
+        colors = get.(Ref(cs), metric[5,:])./ maximum(metric[5,:])
+        Plots.scatter(metric[3,:], metric[1,:]./metric[2,:], metric[4,:], label=nothing, markersize=3, markerstrokewidth=0, fontsize=14,
+            color=colors, xlabel="time window", ylabel="rise:decay ratio", zlabel="sign", title="kernel fit", foreground_color_border=:lightgrey)
+    end
     
-#     winner_idx = findall(x->x==maximum(metric[5,:]), metric[5,:])
-#     winner_param = metric[:,winner_idx][:,1] # multiple kernels can perform equally well (because rise:decay is a ratio), in which case I take the first of those equally good kernels
+    winner_idx = findall(x->x==maximum(metric[5,:]), metric[5,:])
+    winner_param = metric[:,winner_idx][:,1] # multiple kernels can perform equally well (because rise:decay is a ratio), in which case I take the first of those equally good kernels
         
-#     winner_param
-# end
+    return winner_param
+end
     
     
 
@@ -1118,552 +1117,30 @@ end
 # winner_trend: best-fitting kernel
 # winner_convolved_nsm: best-fitting nsm convolution
 
-# function find_winner_kernel(zscored_nsm, fit_target, kernel_range, metric)
-#     winner_idx = findall(x->x==maximum(metric[5,:]), metric[5,:])
-#     winner_param = metric[:,winner_idx][:,1] # multiple kernels can perform equally well, in which case I take the first of those equally good kernels
-#     r = winner_param[1]
-#     f = winner_param[2]
-#     i = Int.(winner_param[3])
-#     s = winner_param[4]
+function find_winner_kernel(zscored_nsm, fit_target, kernel_range, metric)
+    winner_idx = findall(x->x==maximum(metric[5,:]), metric[5,:])
+    winner_param = metric[:,winner_idx][:,1] # multiple kernels can perform equally well, in which case I take the first of those equally good kernels
+    r = winner_param[1]
+    f = winner_param[2]
+    i = Int.(winner_param[3])
+    s = winner_param[4]
     
-#     trend = [] # the ups and downs of a kernel
-#     for t = 1:i
-#         trend = vcat(trend, r*t)
-#     end
-#     peak = trend[end]
-#     for t = 1:i
-#         trend = vcat(trend, peak-f*t)
-#     end
-#     winner_trend = trend .* s
+    trend = [] # the ups and downs of a kernel
+    for t = 1:i
+        trend = vcat(trend, r*t)
+    end
+    peak = trend[end]
+    for t = 1:i
+        trend = vcat(trend, peak-f*t)
+    end
+    winner_trend = trend .* s
     
-#     convolved_nsm = conv(Float64.(winner_trend), zscored_nsm[kernel_range[1]-i:kernel_range[end]]) 
-#     convolved_nsm = zscore_trace(convolved_nsm)
-#     winner_convolved_nsm = convolved_nsm[i+1:(length(convolved_nsm)-2*i+1)]
+    convolved_nsm = conv(Float64.(winner_trend), zscored_nsm[kernel_range[1]-i:kernel_range[end]]) 
+    convolved_nsm = zscore_trace(convolved_nsm)
+    winner_convolved_nsm = convolved_nsm[i+1:(length(convolved_nsm)-2*i+1)]
     
-#     winner_trend, winner_convolved_nsm, r, f, i, s
-# end
-
-
-
-# function plot_winner_kernel(zscored_nsm, fit_target, kernel_range, metric)
-#     winner_trend, winner_convolved_nsm, r, f, i, s = find_winner_kernel(zscored_nsm, fit_target, kernel_range, metric)
-
-#     Plots.plot(zscored_nsm[kernel_range], label="raw NSM", xlabel="time (min)", foreground_color_border=:lightgrey, fontsize=14, ylims=((-4.5, 5)),
-#         xtick=([0, length(kernel_range)/2, length(kernel_range)], 
-#             ["$(Int.(round((kernel_range[1]-1)/100)))", "$(Int.(round(mean(kernel_range)/100)))", "$(Int.(round(kernel_range[end]/100)))"]))
-#     plot!(fit_target, label="fit target", linewidth=2)
-#     plot!(winner_convolved_nsm, label="winner convolved nsm", linewidth=2)
-#     title!("best-fitting kernel: \n rise:decay = $(round(r/f)), time window = $(i), sign = $(Int.(s))")
-# end
-
-
-
-# inputs:
-# same inputs as required for test_nsm_kernels() and shift_test_nsm()
-# n_shifts (optional kwarg): default is 1000, best fitting kernel is independently identified for each shift
-# outputs:
-# winner_param_all_neurons: array of 5 rows and n columns, where n is the number of rows in smooth_traces_array
-# winner_convolved_nsm_all_neurons: array of same size as smooth_traces_array[:,kernel_range]
-# p_val_corr, gof_all_neurons: vectors of the same length as the number of rows in smooth_traces_array
-# sig_neuron_idx: neuron # whose winner_convolved_nsm passes the shifting test
-
-# function shift_test_nsm_kernels(zscored_nsm, smooth_traces_array, kernel_range, shift_range, method; fdr=0.05, threshs=[0,95], n_shifts=1000)
-#     nsm = zscored_nsm
-#     first_t = kernel_range[1]
-#     last_t = kernel_range[end]
-#     num_neurons = size(smooth_traces_array, 1)
-    
-#     winner_param_all_neurons = zeros(4, num_neurons)
-#     winner_convolved_nsm_all_neurons = zeros(num_neurons, length(kernel_range))
-#     p_val_uncorr = ones(num_neurons)
-#     gof_all_neurons = zeros(num_neurons)
-                
-#     for n = 1:num_neurons
-#         fit_target = zscore_trace(smooth_traces_array[n, kernel_range]) # here instead of the pcs, we are fitting to individual neurons
-        
-#         # find best fitting kernel of this neuron to unshifted nsm
-#         metric = test_nsm_kernels(nsm, fit_target, kernel_range; max_rise=1, max_fall=1, max_time_window=30, plot_kernels=false, plot_convolved_nsms=false)
-#         winner_trend, winner_convolved_nsm_no_shift, r, f, i, s = find_winner_kernel(nsm, fit_target, kernel_range, metric)
-#         gof_winner_no_shift = maximum(metric[5,:])
-#         winner_param_no_shift = [r, f, i, s]
-        
-#         gof_all_neurons[n] = gof_winner_no_shift
-#         winner_param_all_neurons[:,n] = winner_param_no_shift
-#         winner_convolved_nsm_all_neurons[n,:] = winner_convolved_nsm_no_shift 
-        
-#         # find best fitting kernel of this neuron to each shifted nsm
-#         gof_winner_all_shifts = zeros(n_shifts)
-        
-#         for sh = 1:n_shifts
-#             t = Int.(round.(rand(Uniform(shift_range[1],shift_range[end]), 1), digits=0)) # sample from shift_range
-
-#             dir = rand(MersenneTwister(), Bool) # a binary random number generator
-#             if dir
-#                 nsm_warp = vcat(nsm[first_t+i:last_t], nsm[1:first_t+i-1]) # forward shift
-#             else 
-#                 nsm_warp = vcat(nsm[last_t-i+1:last_t], nsm[1:last_t-i]) # backward shift
-#             end
-#             nsm_warp = zscore_trace(nsm_warp) # standardize warped nsm, length = length(nsm)
-            
-#             metric = test_nsm_kernels(nsm_warp, fit_target, kernel_range; max_rise=1, max_fall=1, max_time_window=30, plot_kernels=false, plot_convolved_nsms=false)
-#             winner_trend, winner_convolved_nsm, r, f, i, s = find_winner_kernel(nsm_warp, fit_target, kernel_range, metric)
-#             gof_winner_this_shift = maximum(metric[5,:])
-#             gof_winner_all_shifts[sh] = gof_winner_this_shift # now we have a distribution of gofs from all the 1000 shifts
-#         end
-        
-#         # compute p-value for this neuron to see if the best fitting kernel for unshifted nsm does better than that for all shifted nsms
-#         vect = push!(gof_winner_all_shifts, gof_winner_no_shift)
-#         s = sortperm(vect)
-#         tsamples = n_shifts+1
-#         rank = minimum(findall(x->x==vect[tsamples], vect[s]))
-#         thresh_1 = StatsBase.percentile(gof_winner_all_shifts, threshs[1])
-#         thresh_2 = StatsBase.percentile(gof_winner_all_shifts, threshs[2])
-    
-#         if gof_winner_no_shift > 0
-#             p = (tsamples-rank)/tsamples # compute p-val from rank (rank 1 has the smallest value), if 1% of samples are ranked higher than orig, p=0.01
-#         elseif gof_winner_no_shift < 0 && tail == 2
-#             p = (rank-1)/tsamples # if rank is very close to 1, the correlational measure is very negative and p is very small
-#         else
-#             p = 1 # there is no relationship whatsoever
-#         end
-#         p_val_uncorr[n] = p
-#     end
-    
-#     p_val_corr = MultipleTesting.adjust(p_val_uncorr, BenjaminiHochberg())
-#     sig_neuron_idx = findall(x->x.<fdr, p_val_corr)    
-
-#     winner_param_all_neurons, winner_convolved_nsm_all_neurons, p_val_uncorr, p_val_corr, gof_all_neurons, sig_neuron_idx
-# end
-
-
-
-
-# function make_kernel(a,b,c,d,e; plot_kernel=false, flip=false, differentiator=false)
-
-#     rise_phase = a:b:c
-#     decay_phase = c:-d:e
-#     kernel = vcat(rise_phase, decay_phase[2:end])
-    
-#     # make a decay phase
-#     # if vertex <0
-#     #     decay_rate = b
-#     #     decay_phase = vertex:decay_rate:0
-#     #     trend = vcat(rise_phase, decay_phase[2:end])
-#     # elseif vertex==0
-#     #     trend = rise_phase
-#     # else
-#     #     decay_rate = vertex / d
-#     #     decay_phase = vertex:-decay_rate:0
-#     #     trend = vcat(rise_phase, decay_phase[2:end])
-#     # end
-    
-#     # if vertex > 0
-#     #     decay_rate = vertex / d
-#     #     decay_phase = vertex:-decay_rate:0
-#     #     trend = vcat(rise_phase, decay_phase[2:end])
-#     # else
-#     #     trend = []
-#     # end
-    
-#     if plot_kernel
-#         if flip
-#             kernel = 0 .- kernel
-#             plt.plot(kernel, c="black", linewidth=3)
-#             plt.axhline(0, linestyle="--", c="grey")
-#             xlim([0, 32])
-#             title("kernel param: $a, $b, $c, $d, $e", fontsize=14)
-#             xlabel("time (loops)", fontsize=14)
-#             ylabel("weight", fontsize=14)
-#         elseif differentiator
-#             plt.plot(kernel, c="black", linewidth=3)
-#             plt.axhline(0, linestyle="--", c="grey")
-#             xlim([0, 32])
-#             title("kernel param: $a, $b, $c, $d, $e", fontsize=14)
-#             xlabel("time (loops)", fontsize=14)
-#             ylabel("weight", fontsize=14)
-#         else
-#             plt.plot(kernel, c="black", linewidth=3)
-#             plt.axhline(0, linestyle="--", c="grey")
-#             xlim([0, 32])
-#             title("kernel param: $a, $b, $c, $d, $e", fontsize=14)
-#             xlabel("time (loops)", fontsize=14)
-#             ylabel("weight", fontsize=14)
-#         end
-#     end
-    
-#     kernel # shape of kernel, y-axis=weight, x-axis=time (loops)
-# end
-
-
-
-
-# inputs:
-# As: vector of possible start values of kernel
-# Bs: vector of possible rise rates of kernel
-# Cs: vector of possible vertices of kernel (fixed at 16)
-# Ds: vector of possible decay rates of kernel
-# Es: 
-# fit_target should be the same length as nsm_inc
-
-# As=[0,-16], Bs=[1,2,4,8,16], Cs=[16], Ds=[1,2,4,8,16], Es=[0] 50 kernels
-# As=[0,-32], Bs=[1,2,4,8,16,32], Cs=[32], Ds=[1,2,4,8,16,32], Es=[0] 64 kernels
-# As=[0], Bs=[1], Cs=[1], Ds=[1], Es=[0] 1 kernel
-# As=[0,-32], Bs=[1,4,8,32], Cs=[32], Ds=[1,4,8,32], Es=[0] 32 kernels
-# As=[0,-20], Bs=[1,10,20], Cs=[20], Ds=[1,10,20], Es=[0] 10 kernels
-# As=[0,-32], Bs=[1,2,4,8,16,32], Cs=[32], Ds=[1,2,4,8,16,32], Es=[0] 42 kernels
-# As=[0,-16], Bs=[1,2,4,8,16], Cs=[16], Ds=[1,2,4,8,16], Es=[0] 30 kernels
-# As=[0,-32], Bs=[2,8,32], Cs=[32], Ds=[1,2,4,8,16,32], Es=[0]
-# As=[0,-16], Bs=[1,4,16], Cs=[16], Ds=[1,2,4,8,16], Es=[0]
-
-# function test_nsm_kernels_new(nsm, fit_target, method; As=[0,-8], Bs=[1,2,4,8], Cs=[8], Ds=[1,2,4,8], Es=[0])
-    
-#     comb = length(As) * length(Bs) * length(Cs) * length(Ds) * length(Es)
-#     metric = zeros(6, comb)
-    
-#     i = 0
-#     for a = As
-#         if a<0
-#             for b = Bs[2:end]
-#                 for c = Cs
-#                     for d = Ds
-#                         for e = Es
-#                             i = i+1
-#                             if d<=b
-#                                 kernel = make_kernel(a,b,c,d,e; plot_kernel=false)
-#                                 convolved_nsm = conv(kernel, nsm)
-#                                 idx = Int.(length(kernel):length(nsm))
-#                                 x = convolved_nsm[idx]
-#                                 y = fit_target[idx]
-#                                 if method == "spearman correlation"
-#                                     gof = corspearman(x,y)
-#                                 elseif method == "mutual information"
-#                                     gof = get_mutual_information(x,y)/get_entropy(x,y)
-#                                 end
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             else
-#                                 gof = 0
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             end
-#                         end
-#                     end
-#                 end
-#             end            
-#         else
-#             for b = Bs
-#                 for c = Cs
-#                     for d = Ds
-#                         for e = Es
-#                             i = i+1
-#                             if d<=b
-#                                 kernel = make_kernel(a,b,c,d,e; plot_kernel=false)
-#                                 convolved_nsm = conv(kernel, nsm)
-#                                 idx = Int.(length(kernel):length(nsm))
-#                                 x = convolved_nsm[idx]
-#                                 y = fit_target[idx]
-#                                 if method == "spearman correlation"
-#                                     gof = corspearman(x,y)
-#                                 elseif method == "mutual information"
-#                                     gof = get_mutual_information(x,y)/get_entropy(x,y)
-#                                 end
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             else
-#                                 gof = 0
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             end
-#                         end
-#                     end
-#                 end
-#             end
-#         end
-#     end
-#     metric
-# end
-
-
-# function test_nsm_kernels_slow_piezo(nsm, fit_target, method; As=[0,-8]./1.65.*1.35, Bs=[1,2,4,8]./1.65.*1.35, Cs=[8/1.65*1.35], Ds=[1,2,4,8]./1.65.*1.35, Es=[0])
-    
-#     comb = length(As) * length(Bs) * length(Cs) * length(Ds) * length(Es)
-#     metric = zeros(6, comb)
-    
-#     i = 0
-#     for a = As
-#         if a<0
-#             for b = Bs[2:end]
-#                 for c = Cs
-#                     for d = Ds
-#                         for e = Es
-#                             i = i+1
-#                             if d<=b
-#                                 kernel = make_kernel(a,b,c,d,e; plot_kernel=false)
-#                                 convolved_nsm = conv(kernel, nsm)
-#                                 idx = Int.(length(kernel):length(nsm))
-#                                 x = convolved_nsm[idx]
-#                                 y = fit_target[idx]
-#                                 if method == "spearman correlation"
-#                                     gof = corspearman(x,y)
-#                                 elseif method == "mutual information"
-#                                     gof = get_mutual_information(x,y)/get_entropy(x,y)
-#                                 end
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             else
-#                                 gof = 0
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             end
-#                         end
-#                     end
-#                 end
-#             end            
-#         else
-#             for b = Bs
-#                 for c = Cs
-#                     for d = Ds
-#                         for e = Es
-#                             i = i+1
-#                             if d<=b
-#                                 kernel = make_kernel(a,b,c,d,e; plot_kernel=false)
-#                                 convolved_nsm = conv(kernel, nsm)
-#                                 idx = Int.(length(kernel):length(nsm))
-#                                 x = convolved_nsm[idx]
-#                                 y = fit_target[idx]
-#                                 if method == "spearman correlation"
-#                                     gof = corspearman(x,y)
-#                                 elseif method == "mutual information"
-#                                     gof = get_mutual_information(x,y)/get_entropy(x,y)
-#                                 end
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             else
-#                                 gof = 0
-#                                 metric[:,i] = [a,b,c,d,e,gof]
-#                             end
-#                         end
-#                     end
-#                 end
-#             end
-#         end
-#     end
-#     metric
-# end
-
-
-
-
-# function find_winner_param(metric)
-    
-#     max_gof = maximum(abs.(metric[end, :]))
-#     winner_idx = findall(x->abs.(x)==max_gof, metric[end,:]) # if I ever want to select the top 1% of kernels, change this line 
-#     winner_param = metric[1:end-1, winner_idx]
-#     best_gof = metric[end, winner_idx]
-
-#     winner_param, best_gof
-# end
-
-
-
-# function shift_test_nsm_kernels_new(nsm, smooth_traces_array, post_encounter_times, shift_range; fdr=0.05, tail=2, n_shifts=500)
-    
-#     num_neurons = size(smooth_traces_array, 1)
-#     winner_param_all_neurons = zeros(5, num_neurons)
-#     gof_winner_all_shifts = zeros(n_shifts)
-#     p_val_uncorr = ones(num_neurons)
-#     gof_distribution = Dict()
-#     shifts = Int.(round.(rand(Uniform(shift_range[1],shift_range[end]), n_shifts), digits=0)) # sample from shift_range
-#     nsm_inc = vec(nsm[post_encounter_times])
-    
-#     for n = 1:num_neurons
-#         fit_target = vec(smooth_traces_array[n, post_encounter_times]) # here instead of the pcs, we are fitting to individual neurons
-        
-#         # find best fitting kernel of this neuron to unshifted nsm
-#         metric_no_shift = test_nsm_kernels_new(nsm_inc, fit_target)
-#         winner_param, best_gof = find_winner_param(metric_no_shift)
-#         gof_winner_no_shift = best_gof[1]
-#         winner_param_all_neurons[:,n] = winner_param[1:5]
-        
-#         # find best fitting kernel of this neuron to each shifted nsm
-#         gof_winner_all_shifts = zeros(n_shifts)
-#         for sh = 1:n_shifts
-#             t = shifts[sh]
-#             nsm_warp = circshift(nsm_inc, t)
-#             metric_this_shift = test_nsm_kernels_new(nsm_warp, fit_target, "spearman correlation")
-#             winner_param, best_gof = find_winner_param(metric_this_shift)
-#             gof_winner_all_shifts[sh] = best_gof[1]
-#         end
-        
-#         # compute p-value for this neuron to see if the best fitting kernel for unshifted nsm does better than that for all shifted nsms
-#         vect = vcat(gof_winner_all_shifts, gof_winner_no_shift)
-#         s = sortperm(vect)
-#         tsamples = n_shifts+1
-
-#         if gof_winner_no_shift > 0
-#             rank = maximum(findall(x->x==vect[tsamples], vect[s]))
-#             p = (tsamples-rank)/tsamples # compute p-val from rank (rank 1 has the smallest value), if 1% of samples are ranked higher than orig, p=0.01
-#         else
-#             rank = minimum(findall(x->x==vect[tsamples], vect[s]))
-#             p = (rank-1)/tsamples # if rank is very close to 1, the correlational measure is very negative and p is very small
-#         end
-        
-#         p_val_uncorr[n] = p
-#         gof_distribution[n] = vect
-#         print("$n ")
-#     end
-    
-#     p_val_corr = MultipleTesting.adjust(p_val_uncorr, BenjaminiHochberg())
-#     sig_neuron_idx = findall(x->x.<fdr, p_val_corr)    
-
-#     winner_param_all_neurons, p_val_uncorr, p_val_corr, sig_neuron_idx, gof_distribution
-# end
-
-
-# function swap_test_nsm_kernels_deriv(nsm, smooth_traces_array, noisy_idx, post_encounter_times, NSM_like_garbage_library, method; fdr=0.05, tail=2, piezo_rate=1.65)
-    
-#     # segment NSM_like_garbage of the same length as nsm
-#     n_swaps = length(collect(keys(NSM_like_garbage_library)))
-#     NSM_like_garbage_borrowed = zeros(n_swaps, length(post_encounter_times))
-#     j = 1
-#     for i = collect(keys(NSM_like_garbage_library))
-#         t_start = 101
-#         t_end = 101+length(post_encounter_times)-1
-#         NSM_like_garbage_borrowed[j,:] = NSM_like_garbage_library[i][t_start:t_end]
-#         j = j+1
-#     end
-    
-#     all_neuron_idx = 1:size(smooth_traces_array, 1)
-#     good_neuron_idx = setdiff(all_neuron_idx, noisy_idx)
-#     num_good_neurons = length(good_neuron_idx)
-    
-#     winner_param_all_neurons = zeros(6, num_good_neurons)
-#     gof_winner_all_shifts = zeros(n_swaps)
-#     p_val_uncorr = ones(num_good_neurons)
-#     gof_distribution = Dict()
-#     nsm_inc = vec(nsm[post_encounter_times])
-    
-#     for n = 1:num_good_neurons
-#         neuron_idx = good_neuron_idx[n]
-#         fit_target = abs.(CaAnalysis.derivative(vec(smooth_traces_array[neuron_idx, post_encounter_times])))
-        
-#         # find best fitting kernel of this neuron to unshifted nsm
-#         if piezo_rate == 1.35
-#             metric_no_shift = test_nsm_kernels_slow_piezo(nsm_inc, fit_target, method; As=[0]./1.65.*1.35, Bs=[1,2,4,8]./1.65.*1.35, Cs=[8/1.65*1.35], Ds=[1,2,4,8]./1.65.*1.35, Es=[0])
-#         else
-#             metric_no_shift = test_nsm_kernels_new(nsm_inc, fit_target, method; As=[0], Bs=[1,2,4,8], Cs=[8], Ds=[1,2,4,8], Es=[0])
-#         end
-#         winner_param, best_gof = find_winner_param(metric_no_shift)
-#         gof_winner_no_shift = best_gof[1]
-#         winner_param_all_neurons[1:5,n] = winner_param[1:5]
-#         winner_param_all_neurons[6,n] = neuron_idx
-        
-#         # find best fitting kernel of this neuron to each shifted nsm
-#         gof_winner_all_shifts = zeros(n_swaps)
-#         for sh = 1:n_swaps
-#             if piezo_rate == 1.35
-#                 metric_this_shift = test_nsm_kernels_slow_piezo(NSM_like_garbage_borrowed[sh,:], fit_target, method)
-#             else
-#                 metric_this_shift = test_nsm_kernels_new(NSM_like_garbage_borrowed[sh,:], fit_target, method)
-#             end
-#             winner_param, best_gof = find_winner_param(metric_this_shift)
-#             gof_winner_all_shifts[sh] = best_gof[1]
-#         end
-        
-#         # compute p-value for this neuron to see if the best fitting kernel for unshifted nsm does better than that for all shifted nsms
-#         vect = vcat(gof_winner_all_shifts, gof_winner_no_shift)
-#         s = sortperm(vect)
-#         tsamples = n_swaps+1
-
-#         if gof_winner_no_shift > 0
-#             rank = maximum(findall(x->x==vect[tsamples], vect[s]))
-#             p = (tsamples-rank)/tsamples # compute p from rank (rank 1 has the smallest p), if 1% of samples are ranked higher than orig, p=0.01
-#         else
-#             rank = minimum(findall(x->x==vect[tsamples], vect[s]))
-#             p = (rank-1)/tsamples # if rank is very close to 1, the correlational measure is very negative and p is very small
-#         end
-        
-#         p_val_uncorr[n] = p
-#         gof_distribution[n] = vect
-#         print("$(neuron_idx)")
-#     end
-    
-#     p_val_corr = MultipleTesting.adjust(p_val_uncorr, BenjaminiHochberg())
-#     sig_idx = findall(x->x.<fdr, p_val_corr) ######## need more work
-#     sig_neuron_idx = winner_param_all_neurons[6,sig_idx]
-
-#     winner_param_all_neurons, p_val_uncorr, p_val_corr, sig_neuron_idx, gof_distribution
-# end
-
-
-
-# function swap_test_nsm_kernels(nsm, smooth_traces_array, noisy_idx, post_encounter_times, NSM_like_garbage_library, method; fdr=0.05, tail=2, piezo_rate=1.65)
-    
-#     # segment NSM_like_garbage of the same length as nsm
-#     n_swaps = length(collect(keys(NSM_like_garbage_library)))
-#     NSM_like_garbage_borrowed = zeros(n_swaps, length(post_encounter_times))
-#     j = 1
-#     for i = collect(keys(NSM_like_garbage_library))
-#         t_start = 101
-#         t_end = 101+length(post_encounter_times)-1
-#         NSM_like_garbage_borrowed[j,:] = NSM_like_garbage_library[i][t_start:t_end]
-#         j = j+1
-#     end
-    
-#     all_neuron_idx = 1:size(smooth_traces_array, 1)
-#     good_neuron_idx = setdiff(all_neuron_idx, noisy_idx)
-#     num_good_neurons = length(good_neuron_idx)
-    
-#     winner_param_all_neurons = zeros(6, num_good_neurons)
-#     gof_winner_all_shifts = zeros(n_swaps)
-#     p_val_uncorr = ones(num_good_neurons)
-#     gof_distribution = Dict()
-#     nsm_inc = vec(nsm[post_encounter_times])
-    
-#     for n = 1:num_good_neurons
-#         neuron_idx = good_neuron_idx[n]
-#         fit_target = vec(smooth_traces_array[neuron_idx, post_encounter_times]) # here instead of the pcs, we are fitting to individual neurons
-        
-#         # find best fitting kernel of this neuron to unshifted nsm
-#         if piezo_rate == 1.35
-#             metric_no_shift = test_nsm_kernels_slow_piezo(nsm_inc, fit_target, method)
-#         else
-#             metric_no_shift = test_nsm_kernels_new(nsm_inc, fit_target, method)
-#         end
-#         winner_param, best_gof = find_winner_param(metric_no_shift)
-#         gof_winner_no_shift = best_gof[1]
-#         winner_param_all_neurons[1:5,n] = winner_param[1:5]
-#         winner_param_all_neurons[6,n] = neuron_idx
-        
-#         # find best fitting kernel of this neuron to each shifted nsm
-#         gof_winner_all_shifts = zeros(n_swaps)
-#         for sh = 1:n_swaps
-#             if piezo_rate == 1.35
-#                 metric_this_shift = test_nsm_kernels_slow_piezo(NSM_like_garbage_borrowed[sh,:], fit_target, method)
-#             else
-#                 metric_this_shift = test_nsm_kernels_new(NSM_like_garbage_borrowed[sh,:], fit_target, method)
-#             end
-#             winner_param, best_gof = find_winner_param(metric_this_shift)
-#             gof_winner_all_shifts[sh] = best_gof[1]
-#         end
-        
-#         # compute p-value for this neuron to see if the best fitting kernel for unshifted nsm does better than that for all shifted nsms
-#         vect = vcat(gof_winner_all_shifts, gof_winner_no_shift)
-#         s = sortperm(vect)
-#         tsamples = n_swaps+1
-
-#         if gof_winner_no_shift > 0
-#             rank = maximum(findall(x->x==vect[tsamples], vect[s]))
-#             p = (tsamples-rank)/tsamples # compute p from rank (rank 1 has the smallest p), if 1% of samples are ranked higher than orig, p=0.01
-#         else
-#             rank = minimum(findall(x->x==vect[tsamples], vect[s]))
-#             p = (rank-1)/tsamples # if rank is very close to 1, the correlational measure is very negative and p is very small
-#         end
-        
-#         p_val_uncorr[n] = p
-#         gof_distribution[n] = vect
-#         print("$(neuron_idx)")
-#     end
-    
-#     p_val_corr = MultipleTesting.adjust(p_val_uncorr, BenjaminiHochberg())
-#     sig_idx = findall(x->x.<fdr, p_val_corr) ######## need more work
-#     sig_neuron_idx = winner_param_all_neurons[6,sig_idx]
-
-#     winner_param_all_neurons, p_val_uncorr, p_val_corr, sig_neuron_idx, gof_distribution
-# end
+    return winner_trend, winner_convolved_nsm, r, f, i, s
+end
 
 
 
@@ -1698,7 +1175,7 @@ function compute_kernel_dist(metric)
     kernel_dist = sqrt.((x.-x0).^2 + (y.-y0).^2 + (z.-z0).^2)
     kernel_gof = metric[6,:]
     
-    kernel_dist, kernel_gof, differentiator
+    return kernel_dist, kernel_gof, differentiator
 end
 
 
@@ -1771,53 +1248,36 @@ end
 # outputs:
 # x, y, z: vectors of the same length for clustering
 
-# function sig_neurons_winner_param_space(winner_param_all_neurons, sig_neuron_idx, gof_all_neurons)
-#     winner_param_sig_neurons = winner_param_all_neurons[:, sig_neuron_idx]
-#     x = winner_param_sig_neurons[1,:] # starting point of kernel
-#     y = winner_param_sig_neurons[2,:] # rise rate
-#     z = winner_param_sig_neurons[4,:] # decay rate
+function sig_neurons_winner_param_space(winner_param_all_neurons, sig_neuron_idx, gof_all_neurons)
+    winner_param_sig_neurons = winner_param_all_neurons[:, sig_neuron_idx]
+    x = winner_param_sig_neurons[1,:] # starting point of kernel
+    y = winner_param_sig_neurons[2,:] # rise rate
+    z = winner_param_sig_neurons[4,:] # decay rate
     
-#     s = Vector{String}(undef, length(x))
-#     for i = 1:length(x)
-#         if (x[i]==0) && (gof_all_neurons[i]>0)
-#             s[i] = "red" # a neuron positively correlated with NSM
-#         elseif (x[i]==0) && (gof_all_neurons[i]<0)
-#             s[i] = "green" # a neuron negatively correlated with NSM
-#         elseif x[i]<0
-#             s[i] = "purple" # a differenatiator neuron        
-#         end
-#     end
-# #     c = gof_all_neurons[sig_neuron_idx] # amt of correlation with winner_convolved_nsm
+    s = Vector{String}(undef, length(x))
+    for i = 1:length(x)
+        if (x[i]==0) && (gof_all_neurons[i]>0)
+            s[i] = "red" # a neuron positively correlated with NSM
+        elseif (x[i]==0) && (gof_all_neurons[i]<0)
+            s[i] = "green" # a neuron negatively correlated with NSM
+        elseif x[i]<0
+            s[i] = "purple" # a differenatiator neuron        
+        end
+    end
+#     c = gof_all_neurons[sig_neuron_idx] # amt of correlation with winner_convolved_nsm
     
-# #     cs = ColorScheme([colorant"grey", colorant"magenta"])
-# #     colors = get.(Ref(cs), c)
+#     cs = ColorScheme([colorant"grey", colorant"magenta"])
+#     colors = get.(Ref(cs), c)
     
-# #     Plots.scatter(x,y,z, label=nothing, markersize=3, markerstrokewidth=0, fontsize=14, foreground_color_border=:lightgrey,
-# #         color=colors, xlabel="kernel time window", ylabel="kernel rise:decay ratio", zlabel="kernel sign", 
-# #         title="$(length(sig_neuron_idx)) neurons passed the shifting test\n with kernel-convolved NSM")
+#     Plots.scatter(x,y,z, label=nothing, markersize=3, markerstrokewidth=0, fontsize=14, foreground_color_border=:lightgrey,
+#         color=colors, xlabel="kernel time window", ylabel="kernel rise:decay ratio", zlabel="kernel sign", 
+#         title="$(length(sig_neuron_idx)) neurons passed the shifting test\n with kernel-convolved NSM")
     
-#     x, y, z, s
-# end
-
-
-
-# function plot_sig_neuron_param_space(array, s, message)
-
-#         p1 = Plots.scatter(array[1,:], array[2,:], markerstrokewidth=0, color=s, markersize=3, alpha=0.2, title="\n", 
-#             label=nothing, xlabel="starting point", ylabel="rise rate", legend=:none, fontize=13, foreground_color_border=:lightgrey)
-#         p2 = Plots.scatter(array[1,:], array[3,:], markerstrokewidth=0, color=s, markersize=3, alpha=0.2, title="\n", 
-#             label=nothing, xlabel="starting point", ylabel="decay rate", legend=:none, fontize=13, foreground_color_border=:lightgrey)
-#         p3 = Plots.scatter(array[2,:], array[3,:], markerstrokewidth=0, color=s, markersize=3, alpha=0.2, title="\n", 
-#             label=nothing, xlabel="rise rate", ylabel="decay rate", legend=:none, fontize=13, foreground_color_border=:lightgrey)
-#         p4 = Plots.scatter(array[2,:], array[3,:], array[1,:], markerstrokewidth=0, color=s, markersize=6, alpha=0.2, title="$(message)", 
-#             label=nothing, zlabel="starting point", xlabel="rise rate", ylabel="decay rate", legend=:none, fontize=16, foreground_color_border=:lightgrey)
-#         l = @layout [a{0.8h} 
-#             Plots.grid(1,3)]
-#         Plots.plot(p4, p1, p2, p3, layout=l, show=true, size=(600,600))
-
-# end
+    return x, y, z, s
+end
     
 
+    
 # inputs:
 # array: an array of neural activity across time, eg smooth_traces_array, or that of a subset of neurons
 # method: a string, options are "pearson", "spearman"
@@ -1992,7 +1452,7 @@ function eta(trend, events, window_size, y_label)
     ylabel(y_label, fontsize=14)
     title("event triggered average", fontsize=14)
     
-    val_mean, val_sem
+    return val_mean, val_sem
 end
 
 
@@ -2065,6 +1525,7 @@ function findPresynapticPartners(list_neurons, data)
     return presynaptic_partner_dict
 end
 
+    
 
 function quantifySynapticInputModulated(presynaptic_partner_dict, modulated_neuron_id)
     modulated_input = 0
@@ -2082,6 +1543,7 @@ function quantifySynapticInputModulated(presynaptic_partner_dict, modulated_neur
     return modulated_input, all_input
 end
 
+    
 
 function quantifySynapticInputReceptor(presynaptic_partner_dict, receptor_neuron_id)
     modulated_input = 0
@@ -2099,6 +1561,7 @@ function quantifySynapticInputReceptor(presynaptic_partner_dict, receptor_neuron
     return modulated_input, all_input
 end
 
+    
 
 nanmean(x) = mean(filter(!isnan,x))
 nanmean(x,y) = mapslices(nanmean,x,dims=y)
