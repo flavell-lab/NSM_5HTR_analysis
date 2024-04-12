@@ -5,7 +5,7 @@
 
 To cite this work (datasets, methods, code, results), please refer to the article:
 
-Dissecting the functional organization of the C. elegans serotonergic system at whole-brain scale
+### Dissecting the functional organization of the C. elegans serotonergic system at whole-brain scale
 
 Ugur Dag*, Ijeoma Nwabudike*, Di Kang*, Matthew A. Gomes, Jungsoo Kim, Adam A. Atanas, Eric Bueno,
 Cassi Estrem, Sarah Pugliese, Ziyu Wang, Emma Towlson, Steven W. Flavell
